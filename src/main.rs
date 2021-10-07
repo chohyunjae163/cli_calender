@@ -1,4 +1,3 @@
-// Declare array, initialize all values, compiler infers length = 7
 
 
 fn main() {
