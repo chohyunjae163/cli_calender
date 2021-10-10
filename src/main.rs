@@ -3,6 +3,7 @@ use std::fmt;
 use std::process;
 
 fn main() {
+    println!("GREGORIAN CALENDER");
     let args: Vec<String> = env::args().collect();
     let config = Config::new(&args).unwrap_or_else(|err| {
         println!("Config new error: {}", err);
@@ -10,8 +11,14 @@ fn main() {
         process::exit(1);
     });
 
-    println!("{}", config.date);
-    //let date = config.date;
+    println!("config date: {}", config.date);
+    let date = config.date;
+    date.year;
+    date.month;
+    date.day;
+
+    let leap_count = get_leap_year_count(date.year);
+    println!("leap year count: {}", leap_count);
 }
 
 struct Config {
@@ -36,8 +43,8 @@ impl Config {
 
 struct Date {
     year: u32,
-    month: u8,
-    day: u8,
+    month: u32,
+    day: u32,
 }
 
 impl fmt::Display for Date {
@@ -66,8 +73,8 @@ fn get_date(arg: &String) -> Result<Date, &'static str> {
 
 fn parse_date(yy: &String, mm: &String, dd: &String) -> Result<Date, &'static str> {
     let year: u32;
-    let month: u8;
-    let day: u8;
+    let month: u32;
+    let day: u32;
     let result = yy.parse::<u32>();
     match result {
         Ok(v) => {
@@ -76,9 +83,9 @@ fn parse_date(yy: &String, mm: &String, dd: &String) -> Result<Date, &'static st
             }
             year = v
         }
-        Err(_e) => return Err("failed parsing in32 from a year"),
+        Err(_e) => return Err("failed parsing a year"),
     }
-    let result = mm.parse::<u8>();
+    let result = mm.parse::<u32>();
     match result {
         Ok(v) => {
             if v < 1 || v > 12 {
@@ -86,9 +93,9 @@ fn parse_date(yy: &String, mm: &String, dd: &String) -> Result<Date, &'static st
             }
             month = v
         }
-        Err(_e) => return Err("failed parsing in32 from a month"),
+        Err(_e) => return Err("failed parsing a month"),
     }
-    let result = dd.parse::<u8>();
+    let result = dd.parse::<u32>();
     match result {
         Ok(v) => {
             if v < 1 || v > 31 {
@@ -104,7 +111,7 @@ fn parse_date(yy: &String, mm: &String, dd: &String) -> Result<Date, &'static st
             }
             day = v
         }
-        Err(_e) => return Err("failed parsing in32 from a day"),
+        Err(_e) => return Err("failed parsing a day"),
     }
 
     Ok(Date { year, month, day })
@@ -112,4 +119,13 @@ fn parse_date(yy: &String, mm: &String, dd: &String) -> Result<Date, &'static st
 
 fn is_leap_year(year: u32) -> bool {
     (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
+}
+
+fn get_leap_year_count(year: u32) -> u32 {
+    //let months: [i32; 12] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    //let months_leap_year: [i32; 12] = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    //let total = ((year - 1) * 365) + ((month - 1) * 30) + day;
+
+    let count = (year / 4) - (year / 100);
+    count
 }
