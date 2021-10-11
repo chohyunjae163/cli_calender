@@ -1,20 +1,34 @@
-use std::env;
 use std::fmt;
 use std::process;
 
 fn main() {
-    println!("GREGORIAN CALENDER");
-    let args: Vec<String> = env::args().collect();
-    let config = Config::new(&args).unwrap_or_else(|err| {
-        eprintln!("config error: {}", err);
-        eprintln!("this program requires one argument - format: YEAR-MONTH-DAY");
-        process::exit(1);
-    });
-
-    let date = config.date;
-    dbg!(&date);
+    let bytes = include_bytes!("../asset/title.txt");
+    println!("{}", String::from_utf8_lossy(bytes));
+    let mut line = String::new();
+    let date: Date;
+    loop {
+        line.clear();
+        println!("Enter a date (YEAR-MONTH-DATE) or press Q to exit:");
+        std::io::stdin().read_line(&mut line).unwrap();
+        let trimmed = line.trim().to_lowercase();
+        if trimmed == "q" {
+            println!("goodbye!");
+            process::exit(0);
+        }
+        match Config::new(&String::from(trimmed)) {
+            Ok(config) => {
+                date = config.date;
+                break;
+            }
+            Err(e) => eprintln!(
+                "{}\n   this program requires one argument - format: YEAR-MONTH-DAY\n\n",
+                e
+            ),
+        }
+    }
+    //dbg!(&date);
     match calc_day(&date) {
-        Ok(day) => println!("{}. The day of the week was {}", date, DAYS[day as usize]),
+        Ok(day) => println!("{}. The day of the week is {}", date, DAYS[day as usize]),
         Err(e) => eprintln!("{}", e),
     }
 }
@@ -37,13 +51,9 @@ struct Config {
 }
 
 impl Config {
-    fn new(args: &[String]) -> Result<Config, &'static str> {
-        //what if a user writes no input? or more than one input?
-        if args.len() != 2 {
-            return Err("the number of input parameter is wrong");
-        }
+    fn new(line: &String) -> Result<Config, &'static str> {
         //check the validity of the input.
-        let input = &args[1];
+        let input = &line;
         let date = get_date(input);
         match date {
             Ok(v) => Ok(Config { date: v }),
@@ -61,7 +71,7 @@ struct Date {
 
 impl fmt::Display for Date {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Date : {}-{}-{} ", self.year, self.month, self.day)
+        write!(f, "Date : {}-{}-{}", self.year, self.month, self.day)
     }
 }
 
@@ -76,6 +86,7 @@ fn get_date(arg: &String) -> Result<Date, &'static str> {
         }
         strs[index].push(c);
     }
+    //dbg!(&strs[0], &strs[1], &strs[2]);
     let result = parse_date(&strs[0], &strs[1], &strs[2]);
     match result {
         Ok(date) => Ok(date),
@@ -131,7 +142,7 @@ fn parse_date(yy: &String, mm: &String, dd: &String) -> Result<Date, &'static st
 
 fn is_leap_year(year: u32) -> bool {
     let leap_year = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
-    dbg!(leap_year);
+    //dbg!(leap_year);
     leap_year
 }
 
@@ -144,7 +155,7 @@ fn get_leap_year_count(year: u32) -> Result<u32, &'static str> {
         (GREGORIAN_CALENDAR / 4) - (GREGORIAN_CALENDAR / 100) + (GREGORIAN_CALENDAR / 400);
 
     let leap_year_count = (year / 4) - (year / 100) + (year / 400) - pre_gregorian_leaps;
-    dbg!(leap_year_count);
+    //dbg!(leap_year_count);
     Ok(leap_year_count)
 }
 
