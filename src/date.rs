@@ -3,7 +3,7 @@ use std::fmt;
 //the Gregorian calendar is adopted in 1582
 const GREGORIAN_CALENDAR: u32 = 1582;
 //Jan. 1st of the Gregorian calendar is Thursday.
-pub const DAYS: [&'static str; 7] = [
+const DAYS: [&'static str; 7] = [
     "THURSDAY",
     "FRIDAY",
     "SATURDAY",
@@ -13,9 +13,8 @@ pub const DAYS: [&'static str; 7] = [
     "WEDNESDAY",
 ];
 
-
 #[derive(Debug)]
-pub struct Date {
+struct Date {
     year: u32,
     month: u32,
     day: u32,
@@ -27,7 +26,7 @@ impl fmt::Display for Date {
     }
 }
 
-pub fn get_date(arg: &String) -> Result<Date, &'static str> {
+fn get_date(arg: &String) -> Result<Date, &'static str> {
     let mut strs: Vec<String> = vec![String::from(""), String::from(""), String::from("")];
     let mut index = 0;
     //expected string format year-month-day.
@@ -98,24 +97,19 @@ fn is_leap_year(year: u32) -> bool {
     leap_year
 }
 
-fn get_leap_year_count(year: u32) -> Result<u32, &'static str> {
-    if year < GREGORIAN_CALENDAR {
-        return Err("the input year is smaller than the Gregorian calendar");
-    }
-
+fn get_leap_year_count(year: u32) -> u32 {
     let pre_gregorian_leaps =
         (GREGORIAN_CALENDAR / 4) - (GREGORIAN_CALENDAR / 100) + (GREGORIAN_CALENDAR / 400);
 
     let leap_year_count = (year / 4) - (year / 100) + (year / 400) - pre_gregorian_leaps;
     //dbg!(leap_year_count);
-    Ok(leap_year_count)
+    leap_year_count
 }
 
-pub fn calc_day(date: &Date) -> Result<u32, &'static str> {
+fn calc_day(date: &Date) -> u32 {
     const YEAR: u32 = 365;
     let mut days = 0;
     if date.month > 1 {
-        //DECEMBER is not needed.
         const MONTHS: [u32; 11] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30];
         const MONTHS_LEAP_YEAR: [u32; 11] = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30];
         let month_minus_one = (date.month - 1) as usize;
@@ -129,12 +123,38 @@ pub fn calc_day(date: &Date) -> Result<u32, &'static str> {
             }
         }
     }
+    let leap_year_count = get_leap_year_count(date.year);
+    days += (date.year - GREGORIAN_CALENDAR) * YEAR + date.day + leap_year_count;
+    days % 7
+}
 
-    match get_leap_year_count(date.year) {
-        Ok(leap_year_count) => {
-            days += (date.year - GREGORIAN_CALENDAR) * YEAR + date.day + leap_year_count
+fn print_title() {
+    let bytes = include_bytes!("../asset/title.txt");
+    println!("{}", String::from_utf8_lossy(bytes));
+}
+
+pub fn run() {
+    print_title();
+    let mut line = String::new();
+    let date: Date;
+    loop {
+        line.clear();
+        println!("Enter a date (YEAR-MONTH-DATE) or press Q to exit:");
+        std::io::stdin().read_line(&mut line).unwrap();
+        let trimmed = line.trim().to_lowercase();
+        if trimmed == "q" {
+            println!("goodbye!");
+            return;
         }
-        Err(e) => return Err(e),
+        match get_date(&trimmed) {
+            Ok(v) => {
+                date = v;
+                break;
+            }
+            Err(e) => eprintln!("{}", e),
+        };
     }
-    Ok(days % 7)
+    //dbg!(&date);
+    let day = calc_day(&date);
+    println!("{}. The day of the week is {}", date, DAYS[day as usize]);
 }
