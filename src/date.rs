@@ -1,5 +1,5 @@
+use std::convert::TryInto;
 use std::fmt;
-
 //the Gregorian calendar is adopted in 1582
 const GREGORIAN_CALENDAR: u32 = 1582;
 //Jan. 1st of the Gregorian calendar is Thursday.
@@ -26,10 +26,10 @@ impl fmt::Display for Date {
     }
 }
 
-fn get_date(arg: &String) -> Result<Date, &'static str> {
+fn parse_date(arg: &String) -> Result<Date, &'static str> {
     let mut strs: Vec<String> = vec![String::from(""), String::from(""), String::from("")];
     let mut index = 0;
-    //expected string format year-month-day.
+    //expects format year-month-day.
     for c in arg.chars() {
         if c == '-' {
             index += 1;
@@ -37,19 +37,11 @@ fn get_date(arg: &String) -> Result<Date, &'static str> {
         }
         strs[index].push(c);
     }
-    //dbg!(&strs[0], &strs[1], &strs[2]);
-    let result = parse_date(&strs[0], &strs[1], &strs[2]);
-    match result {
-        Ok(date) => Ok(date),
-        Err(e) => Err(e),
-    }
-}
-
-fn parse_date(yy: &String, mm: &String, dd: &String) -> Result<Date, &'static str> {
+    //dbg!(&strs);
     let year: u32;
     let month: u32;
     let day: u32;
-    let result = yy.parse::<u32>();
+    let result = strs[0].parse::<u32>();
     match result {
         Ok(v) => {
             if v < GREGORIAN_CALENDAR {
@@ -59,7 +51,7 @@ fn parse_date(yy: &String, mm: &String, dd: &String) -> Result<Date, &'static st
         }
         Err(_e) => return Err("failed parsing a year"),
     }
-    let result = mm.parse::<u32>();
+    let result = strs[1].parse::<u32>();
     match result {
         Ok(v) => {
             if v < 1 || v > 12 {
@@ -69,7 +61,7 @@ fn parse_date(yy: &String, mm: &String, dd: &String) -> Result<Date, &'static st
         }
         Err(_e) => return Err("failed parsing a month"),
     }
-    let result = dd.parse::<u32>();
+    let result = strs[2].parse::<u32>();
     match result {
         Ok(v) => {
             if v < 1 || v > 31 {
@@ -107,23 +99,20 @@ fn get_leap_year_count(year: u32) -> u32 {
 }
 
 fn calc_day(date: &Date) -> u32 {
-    const YEAR: u32 = 365;
     let mut days = 0;
+    //count days from Jan. 1st to the date.
     if date.month > 1 {
-        const MONTHS: [u32; 11] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30];
-        const MONTHS_LEAP_YEAR: [u32; 11] = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30];
-        let month_minus_one = (date.month - 1) as usize;
-        if is_leap_year(date.year) {
-            for d in &MONTHS_LEAP_YEAR[0..month_minus_one] {
-                days += d;
-            }
-        } else {
-            for d in &MONTHS[0..month_minus_one] {
-                days += d;
-            }
+        const M: [u32; 11] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30];
+        for d in &M[0..(date.month - 1).try_into().unwrap()] {
+            days += d;
+        }
+        //if it's after Feb and leap year.. add 1.
+        if date.month > 2 && is_leap_year(date.year) {
+            days += 1;
         }
     }
     let leap_year_count = get_leap_year_count(date.year);
+    const YEAR: u32 = 365;
     days += (date.year - GREGORIAN_CALENDAR) * YEAR + date.day + leap_year_count;
     days % 7
 }
@@ -134,27 +123,27 @@ fn print_title() {
 }
 
 pub fn run() {
+    //print hello calendar title
     print_title();
-    let mut line = String::new();
-    let date: Date;
+
     loop {
-        line.clear();
+        let mut line = String::new();
         println!("Enter a date (YEAR-MONTH-DATE) or press Q to exit:");
         std::io::stdin().read_line(&mut line).unwrap();
-        let trimmed = line.trim().to_lowercase();
-        if trimmed == "q" {
+        line = line.trim().to_string();
+        // if a user wants to quit, exit.
+        if line == "q" || line == "Q" {
             println!("goodbye!");
             return;
         }
-        match get_date(&trimmed) {
+        //parse date from that input.or else go back and ask for a date again.
+        match parse_date(&line) {
             Ok(v) => {
-                date = v;
+                let day = calc_day(&v);
+                println!("{}. The day of the week is {}", v, DAYS[day as usize]);
                 break;
             }
             Err(e) => eprintln!("{}", e),
         };
     }
-    //dbg!(&date);
-    let day = calc_day(&date);
-    println!("{}. The day of the week is {}", date, DAYS[day as usize]);
 }
