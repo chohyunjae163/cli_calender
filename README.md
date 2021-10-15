@@ -3,6 +3,4 @@
 ##### a cli calender written in Rust 
 
 
-* get a day
-* get a month
-* get today's date
+* get a day of the week
