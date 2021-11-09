@@ -1,6 +1,5 @@
-## CS 50 FINAL PROJECT
-# cli_calender
-
+# CS 50 FINAL PROJECT
+### cli_calender
 ##### a cli calender written in Rust 
 
 
